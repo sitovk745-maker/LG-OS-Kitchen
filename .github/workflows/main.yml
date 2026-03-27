@@ -36,11 +36,11 @@ jobs:
 
       - name: Вскрытие архивов (RAR и KDZ)
         run: |
-          # Пытаемся распаковать RAR
-          unrar e firmware_archive ./ || echo "Это не RAR, продолжаем..."
+          # Распаковываем RAR (x - с папками, -y - соглашаться на всё)
+          unrar x -y firmware_archive ./ || echo "Это не RAR, продолжаем..."
 
           # Ищем файл .kdz внутри
-          KDZ_FILE=$(find . -maxdepth 1 -name "*.kdz" | head -n 1)
+          KDZ_FILE=$(find . -name "*.kdz" | head -n 1)
           if [ -z "$KDZ_FILE" ]; then
             mv firmware_archive firmware.kdz
             KDZ_FILE="firmware.kdz"
