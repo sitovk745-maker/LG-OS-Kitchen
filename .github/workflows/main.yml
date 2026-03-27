@@ -1,0 +1,72 @@
+name: LG KDZ Auto-Extractor
+
+on: 
+  workflow_dispatch:
+    inputs:
+      gdrive_link:
+        description: 'https://drive.google.com/file/d/1sytcGPZcW-jTDBa6LUixeQ3l8SN32Q89/view?usp=sharing'
+        required: true
+        type: string
+
+jobs:
+  extract_kdz:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Очистка мееста на сервере
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo apt-get clean
+
+      - name: Подготовка инструментов
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unrar zip
+          pip install gdown
+
+      - name: Скачивание утилиты kdztools
+        run: git clone https://github.com/steadfasterX/kdztools.git
+
+      - name: Скачивание прошивки с Goodle Диска
+        run: |
+          # gdown поможет извлечь тяжёлый файл по ссылке
+          gdown "${{ inputs.gdrive_link }}" -0 firmware_archive --fuzzy
+
+      - name: Вскрытие архивов (RAR и KDZ)
+        run: |
+          # Пытаемся распаковать RAR
+          unrar e firmware_archive ./ || echo "Это не RAR, продолжаем..."
+
+          # Ищем файл .kdz внутри
+          KDZ_FILE=$(find . -maxdepth 1 -name "*.kdz" | head -n 1)
+          if [ -z "$KDZ_FILE" ]; then
+            mv firmware_archive firmware.kdz
+            KDZ_FILE="firmware.kdz"
+          fi
+
+          echo "Распаковка: $KDZ_FILE"
+          python3 kdztools/unkdz.py -f "$KDZ_FILE" -x
+
+      - name: Извлечение образов (system и boot)
+        run: |
+          DZ_FILE=$(find kdzextracted -name "*.dz" | head -n 1)
+          echo "Извлекаем разделы из: $DZ_FILE"
+          python3 kdztools/unkdz.py -f "$DZ_FILE" -x
+
+      - name: Упаковка нужных файлов в лёгкий ZIP
+        run: |
+          mkdir ROM_FILES
+          # Достаём только самое важное, чтобы сэкономить место
+          cp dzextracted/*system*.image ROM_FILES/system.img || echo "system не найден!"
+          cp dzextracted/*boot*.image ROM_FILES/boot.img || echo "boot не найден!"
+
+          cd ROM_FILES
+          zip -r ../LG_System_Boot_Extracted.zip .
+
+      - name: Выдача готового результата
+        uses: actions/upload-artifact@4
+        with:
+          name: My_LG_OS_Base
+          path: LG_System_Boot_Extracted.zip
