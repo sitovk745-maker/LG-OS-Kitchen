@@ -32,7 +32,7 @@ jobs:
       - name: Скачивание прошивки с Goodle Диска
         run: |
           # gdown поможет извлечь тяжёлый файл по ссылке
-          gdown "${{ inputs.gdrive_link }}" -0 firmware_archive --fuzzy
+          gdown --output firmware_archive --fuzzy "${{ inputs.gdrive_link }}"
 
       - name: Вскрытие архивов (RAR и KDZ)
         run: |
