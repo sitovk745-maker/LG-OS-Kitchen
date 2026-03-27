@@ -23,7 +23,7 @@ jobs:
       - name: Подготовка инструментов
         run: |
           sudo apt-get update
-          sudo apt-get install -y unrar zip
+          sudo apt-get install -y unrar zip python2
           pip install gdown
 
       - name: Скачивание утилиты kdztools
@@ -47,13 +47,13 @@ jobs:
           fi
 
           echo "Распаковка: $KDZ_FILE"
-          python3 kdztools/unkdz.py -f "$KDZ_FILE" -x
+          python2 kdztools/unkdz.py -f "$KDZ_FILE" -x
 
       - name: Извлечение образов (system и boot)
         run: |
           DZ_FILE=$(find kdzextracted -name "*.dz" | head -n 1)
           echo "Извлекаем разделы из: $DZ_FILE"
-          python3 kdztools/unkdz.py -f "$DZ_FILE" -x
+          python2 kdztools/unkdz.py -f "$DZ_FILE" -x
 
       - name: Упаковка нужных файлов в лёгкий ZIP
         run: |
